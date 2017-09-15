@@ -1,0 +1,90 @@
+---
+title: "Waveform Dataset"
+author: "Deepak Rajoori"
+date: "4 September 2017"
+output: html_document
+---
+
+```{r Set Working Directory}
+setwd("F:/Project/WaveformDataset")
+```
+
+```{r Read Waveform Data}
+waveform_data <- read.csv("waveform-+noise.csv", header = TRUE, sep = ",")
+```
+
+```{r Structure and Summary of the data}
+str(waveform_data)
+summary(waveform_data)
+```
+
+
+```{r Converting Target Variable into Factor}
+waveform_data$Waveform.Type <- as.factor(waveform_data$Waveform.Type)
+waveform_data_norm <- subset(waveform_data, select = -c(Waveform.Type))
+waveform_data_class <- as.data.frame(waveform_data[ ,41])
+waveform_data_class$`waveform_data[, 41]` <- as.factor(waveform_data_class$`waveform_data[, 41]`)
+```
+
+
+#Since each instance is a set of wave noises that are recorded are all numeric, the data should be Normalized in order to get better results
+
+```{r Data Normalization by using min-max normalization function}
+#We are using general normalization function because all the noises in the dataset are with mean = 0 and variance = 1
+
+normalize <- function(x)
+  (
+    return((x-min(x))/(max(x)-min(x)))
+  )
+```
+
+
+```{r Create a normalized waveform dataset}
+waveform_n <- as.data.frame(lapply(waveform_data_norm,normalize))
+print(waveform_n)
+```
+
+#Create another normalization dataset by using z-score standardization
+```{r Z-score Standardized Dataset}
+waveform_nz <- as.data.frame(scale(waveform_data_norm))
+print(waveform_nz)
+```
+
+
+##Max-Min Normalized dataset
+#Create Train and Test Datasets
+```{r Class Distribution in the main Dataset}
+table(waveform_data$Waveform.Type)
+```
+
+
+#Create train and test datasets
+```{r}
+library(base)
+samp_index <- floor(0.75 * nrow(waveform_data))
+set.seed(123)
+train_ind <- sample(seq_len(nrow(waveform_data)), size = samp_index)
+train_data <- waveform_n[train_ind, ]
+test_data <- waveform_n[-train_ind, ]
+train_data_class <- waveform_data[train_ind, 41]
+test_data_class <- waveform_data[-train_ind, 41]
+```
+
+#Deciding the value of k
+
+```{r Train Data and Test Data Accuracy}
+#Train data Accuracy
+pred_n1 <- knn(train_data, train_data, train_data_class, k= 71)
+a=table(pred_n1, train_data_class)
+a
+accu1 =sum(diag(a))/nrow(train_data)
+accu1
+
+#Test data Accuracy
+pred_n <- knn(train_data, test_data, train_data_class, k= 71)
+b=table(pred_n, test_data_class)
+b
+accu2 =sum(diag(b))/nrow(test_data)
+accu2
+```
+
